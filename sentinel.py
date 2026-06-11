@@ -4,6 +4,10 @@ import time
 import requests
 import threading
 
+BACKEND_URL    = "http://localhost:3000"
+AI_API_KEY     = "kunci_rahasia_gacor_jovanvendaf"  # samakan dengan .env backend
+CAMERA_ID      = 1  # ID kamera ini di database (sesuaikan dengan ID kamera kamu)
+JEDA_KIRIM_FRAME = 5  # kirim foto terbaru setiap 5 detik
 TELEGRAM_TOKEN   = "8944179544:AAEhNUAPgBuFqI922l7DlktjCBPaWF2VHqk"
 TELEGRAM_CHAT_ID = "5037364425"
 JEDA_NOTIFIKASI  = 30
@@ -63,6 +67,28 @@ def kirim_telegram(pesan):
             print(f"[Telegram] ❌ Gagal kirim pesan: {e}")
     threading.Thread(target=_kirim, daemon=True).start()
 
+
+def kirim_frame_ke_backend(frame):
+    def _kirim():
+        try:
+            _, buffer = cv2.imencode(".jpg", frame)
+            url = f"{BACKEND_URL}/api/cameras/{CAMERA_ID}/status-frame"
+            resp = requests.post(
+                url,
+                headers={"x-api-key": AI_API_KEY},
+                files={"frame": ("frame.jpg", buffer.tobytes(), "image/jpeg")},
+                timeout=5
+            )
+            if resp.status_code == 200:
+                print("[Backend] ✅ Frame terkirim.")
+            else:
+                print(f"[Backend] ⚠️ HTTP {resp.status_code}: {resp.text}")
+        except Exception as e:
+            print(f"[Backend] ❌ Gagal kirim frame: {e}")
+    threading.Thread(target=_kirim, daemon=True).start()
+
+
+
 def kirim_foto_telegram(frame):
     def _kirim():
         try:
@@ -94,6 +120,7 @@ waktu_jatuh               = None
 status                    = "AMAN"
 waktu_notifikasi_terakhir = 0
 frame_terkini             = None
+waktu_kirim_frame_terakhir = 0
 
 threading.Thread(target=cek_perintah, daemon=True).start()
 print("SentinelAI aktif! Tekan Q untuk keluar.")
@@ -137,6 +164,11 @@ while True:
     warna          = (0, 0, 255) if "JATUH" in status else (0, 255, 0)
     frame_annotated = frame.copy()
     frame_terkini   = frame_annotated.copy()
+    # ── Kirim frame terbaru ke backend secara berkala ─────────
+    sekarang_frame = time.time()
+    if sekarang_frame - waktu_kirim_frame_terakhir >= JEDA_KIRIM_FRAME:
+        waktu_kirim_frame_terakhir = sekarang_frame
+        kirim_frame_ke_backend(frame_annotated)
 
     cv2.putText(frame_annotated, status, (30, 50),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.2, warna, 3)
