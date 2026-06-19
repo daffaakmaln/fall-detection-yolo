@@ -6,12 +6,13 @@ import threading
 
 BACKEND_URL    = "http://localhost:3000"
 AI_API_KEY     = "kunci_rahasia_gacor_jovanvendaf"  # samakan dengan .env backend
-CAMERA_ID      = 1  # ID kamera ini di database (sesuaikan dengan ID kamera kamu)
+CAMERA_ID      = 2  # ID kamera ini di database (sesuaikan dengan ID kamera kamu)
 JEDA_KIRIM_FRAME = 5  # kirim foto terbaru setiap 5 detik
 TELEGRAM_TOKEN   = "8944179544:AAEhNUAPgBuFqI922l7DlktjCBPaWF2VHqk"
 TELEGRAM_CHAT_ID = "5037364425"
 JEDA_NOTIFIKASI  = 30
 WAKTU_DIAM       = 2
+#test
 
 def cek_perintah():
     global status, waktu_jatuh
