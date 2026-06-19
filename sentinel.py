@@ -275,3 +275,4 @@ while True:
 
 kamera.release()
 cv2.destroyAllWindows()
+#test
