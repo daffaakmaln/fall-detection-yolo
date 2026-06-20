@@ -120,6 +120,34 @@ def kirim_foto_telegram(frame):
             print(f"[Telegram] ❌ Gagal kirim foto: {e}")
     threading.Thread(target=_kirim, daemon=True).start()
 
+
+def kirim_fall_event_ke_backend(frame, confidence_score):
+    def _kirim():
+        try:
+            _, buffer = cv2.imencode(".jpg", frame)
+            event_time = time.strftime('%Y-%m-%d %H:%M:%S')
+            url = f"{BACKEND_URL}/api/events/fall"
+            resp = requests.post(
+                url,
+                headers={"x-api-key": AI_API_KEY},
+                data={
+                    "camera_id": CAMERA_ID,
+                    "event_time": event_time,
+                    "confidence_score": confidence_score,
+                },
+                files={"snapshot": ("fall.jpg", buffer.tobytes(), "image/jpeg")},
+                timeout=10
+            )
+            if resp.status_code == 201:
+                print(f"[Backend] ✅ Fall event terkirim.")
+            else:
+                print(f"[Backend] ⚠️ HTTP {resp.status_code}: {resp.text}")
+        except Exception as e:
+            print(f"[Backend] ❌ Gagal kirim fall event: {e}")
+    threading.Thread(target=_kirim, daemon=True).start()
+
+
+
 # ─────────────────────────────────────────────────────────────
 # FUNGSI HITUNG FITUR
 # ─────────────────────────────────────────────────────────────
@@ -242,6 +270,7 @@ while True:
                         f"📷 Screenshot terlampir."
                     )
                     kirim_foto_telegram(frame_notif)
+                    kirim_fall_event_ke_backend(frame_notif, prediksi_conf)  # ← tambah ini
     else:
         # Hanya reset kalau status BELUM "JATUH TERDETEKSI!"
         if status != "JATUH TERDETEKSI!":
