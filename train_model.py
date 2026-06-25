@@ -1,10 +1,11 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Load dataset
 df = pd.read_csv("dataset_fitur_balanced.csv")
@@ -26,7 +27,14 @@ print(f"\nTrain: {len(X_train)}, Test: {len(X_test)}")
 model = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
 model.fit(X_train, y_train)
 
-# Evaluasi
+# ── Cross Validation ──────────────────────────────────────
+print("\n── CROSS VALIDATION (5-Fold) ──")
+cv_scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')
+print(f"Akurasi per fold: {[f'{s:.2%}' for s in cv_scores]}")
+print(f"Rata-rata       : {cv_scores.mean():.2%}")
+print(f"Standar deviasi : {cv_scores.std():.2%}")
+
+# ── Evaluasi di data test ─────────────────────────────────
 y_pred = model.predict(X_test)
 
 print("\n── CLASSIFICATION REPORT ──")
