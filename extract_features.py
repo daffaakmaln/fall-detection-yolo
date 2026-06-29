@@ -4,7 +4,7 @@ import math
 import pandas as pd
 from ultralytics import YOLO
 
-model = YOLO("yolov8n-pose.pt")
+model = YOLO("yolov8s-pose.pt")
 
 def hitung_fitur(titik, conf_titik):
     """Hitung sudut kemiringan dan posisi dari titik-titik sendi."""
