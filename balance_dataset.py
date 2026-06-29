@@ -9,7 +9,7 @@ print(f"Sebelum balance:")
 print(f"  Fall: {len(df_fall)}")
 print(f"  Normal: {len(df_normal)}")
 
-# Ambil sample normal sebanyak jumlah fall (atau sedikit lebih banyak, misal 1.5x)
+#ambil sample dari df_normal sebanyak 2x df_fall
 df_normal_balanced = df_normal.sample(n=len(df_fall) * 2, random_state=42)
 
 df_final = pd.concat([df_fall, df_normal_balanced])

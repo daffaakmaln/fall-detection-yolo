@@ -1,3 +1,4 @@
+import os
 import cv2
 from ultralytics import YOLO
 import time
@@ -6,21 +7,22 @@ import requests
 import threading
 import joblib
 import numpy as np
+from dotenv import load_dotenv
 
-# ╔══════════════════════════════════════════════════════════════╗
-# ║              KONFIGURASI                                     ║
-# ╚══════════════════════════════════════════════════════════════╝
+load_dotenv()
+
+#main config
 BACKEND_URL       = "http://localhost:3000"
-AI_API_KEY        = "kunci_rahasia_gacor_jovanvendaf"
+AI_API_KEY        = os.getenv("API_KEY")
 CAMERA_ID         = 2
 JEDA_KIRIM_FRAME  = 5
 
-TELEGRAM_TOKEN    = "YOUR_TELEGRAM_TOKEN"
-TELEGRAM_CHAT_ID  = "YOUR_CHAT_ID"
+TELEGRAM_TOKEN    = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID  = os.getenv("TELEGRAM_CHAT_ID")
 JEDA_NOTIFIKASI   = 30
 WAKTU_DIAM        = 1.5
 
-# Threshold hybrid deteksi jatuh
+#config threshold  
 RF_FALL_CONF_THRESHOLD      = 0.60
 IMPACT_SPEED_THRESHOLD      = 95
 IMPACT_DELTA_ANGLE          = 10
@@ -36,13 +38,74 @@ POST_FALL_Y_OFFSET          = 60
 RECOVER_ANGLE_THRESHOLD     = 35
 RECOVER_TIME_SEC            = 2.0
 
-# Tambahan smoothing
+# smooth parameter / ema cmiiw
 EMA_ALPHA = 0.7
 
-# ─────────────────────────────────────────────────────────────
-# FUNGSI TELEGRAM
-# ─────────────────────────────────────────────────────────────
+# kirimm data ke backend
+def kirim_fall_event_ke_backend(frame, confidence_score=None):
+    """Kirim notifikasi jatuh ke backend (POST /api/events/fall)"""
+    def _kirim():
+        try:
+            event_time = time.strftime("%Y-%m-%d %H:%M:%S")
 
+            files = {}
+            data = {
+                "camera_id": str(CAMERA_ID),
+                "event_time": event_time,
+            }
+            if confidence_score is not None:
+                data["confidence_score"] = str(round(confidence_score, 4))
+
+            # encode frame ke JPG
+            if frame is not None:
+                _, buffer = cv2.imencode(".jpg", frame)
+                files["snapshot"] = ("snapshot.jpg", buffer.tobytes(), "image/jpeg")
+
+            resp = requests.post(
+                f"{BACKEND_URL}/api/events/fall",
+                headers={"x-api-key": AI_API_KEY},
+                data=data,
+                files=files if files else None,
+                timeout=10
+            )
+
+            if resp.status_code == 201:
+                print(f"[Backend] ✅ Fall event terkirim: {resp.json()}")
+            else:
+                print(f"[Backend] ⚠️ Fall event gagal: {resp.status_code} - {resp.text}")
+
+        except Exception as e:
+            print(f"[Backend] ❌ Error kirim fall event: {e}")
+
+    threading.Thread(target=_kirim, daemon=True).start()
+
+
+def kirim_status_frame_ke_backend(frame):
+    """Kirim frame terbaru ke backend (POST /api/cameras/:id/status-frame)"""
+    def _kirim():
+        try:
+            _, buffer = cv2.imencode(".jpg", frame)
+            files = {"frame": ("frame.jpg", buffer.tobytes(), "image/jpeg")}
+
+            resp = requests.post(
+                f"{BACKEND_URL}/api/cameras/{CAMERA_ID}/status-frame",
+                headers={"x-api-key": AI_API_KEY},
+                files=files,
+                timeout=10
+            )
+
+            if resp.status_code == 200:
+                print(f"[Backend] 📷 Frame status terkirim")
+            else:
+                print(f"[Backend] ⚠️ Frame gagal: {resp.status_code} - {resp.text}")
+
+        except Exception as e:
+            print(f"[Backend] ❌ Error kirim frame: {e}")
+
+    threading.Thread(target=_kirim, daemon=True).start()
+
+
+# telegram /cmd func
 def cek_perintah():
     global status, waktu_jatuh, fall_state, suspect_start_time, recover_start_time, baseline_posisi_y
     offset = 0
@@ -130,15 +193,13 @@ def kirim_foto_telegram(frame):
     threading.Thread(target=_kirim, daemon=True).start()
 
 
-# ─────────────────────────────────────────────────────────────
-# FUNGSI FITUR
-# ─────────────────────────────────────────────────────────────
+# fitur sudut/keypoint untuk deteksi jatuh
 
 def hitung_fitur(titik, conf_titik):
     c_bahu = min(conf_titik[5].item(), conf_titik[6].item())
     c_pinggul = min(conf_titik[11].item(), conf_titik[12].item())
 
-    # confidence gating lebih ketat
+    # when confidence cilik, ignore frame
     if c_bahu < 0.5 or c_pinggul < 0.5:
         return None
 
@@ -159,11 +220,7 @@ def hitung_fitur(titik, conf_titik):
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# INISIALISASI
-# ─────────────────────────────────────────────────────────────
-
-model_pose = YOLO("yolov8s-pose.pt")  # bisa ganti ke n/s/m
+model_pose = YOLO("yolov8s-pose.pt")  
 model_rf = joblib.load("model_fall_detection.pkl")
 kamera = cv2.VideoCapture(0)
 
@@ -187,13 +244,13 @@ recover_start_time         = None
 baseline_posisi_y          = None
 sudut_sebelumnya           = None
 
+#tracking backend
+fall_sudah_dikirim         = False   # 1 event = 1 kirim
+
 threading.Thread(target=cek_perintah, daemon=True).start()
 
 print("SentinelAI aktif! Tekan Q untuk keluar.")
 
-# ─────────────────────────────────────────────────────────────
-# MAIN LOOP
-# ─────────────────────────────────────────────────────────────
 
 while True:
     berhasil, frame = kamera.read()
@@ -250,7 +307,7 @@ while True:
                     if dt > 0:
                         kecepatan = (posisi_smooth - posisi_sebelumnya) / dt
 
-                        # median filter
+                        # median filterr
                         riwayat_kecepatan.append(kecepatan)
                         if len(riwayat_kecepatan) > 5:
                             riwayat_kecepatan.pop(0)
@@ -260,13 +317,13 @@ while True:
                         if dt <= IMPACT_WINDOW_SEC and sudut_sebelumnya is not None:
                             delta_sudut = abs(sudut - sudut_sebelumnya)
 
-                # Random Forest
+                # randum furest algorithm
                 X_input = np.array([[sudut, kecepatan_filtered]])
                 prediksi_label = model_rf.predict(X_input)[0]
                 prediksi_proba = model_rf.predict_proba(X_input)[0]
                 prediksi_conf = max(prediksi_proba)
 
-                # peak speed
+                # speed max
                 riwayat_kecepatan_max.append(kecepatan_filtered)
                 if len(riwayat_kecepatan_max) > KECEPATAN_PUNCAK_WINDOW:
                     riwayat_kecepatan_max.pop(0)
@@ -290,7 +347,7 @@ while True:
                     impact_vote_ok
                 )
 
-                # baseline aman
+                # base case aman
                 if fall_state == "SAFE" and sudut < 45:
                     if baseline_posisi_y is None:
                         baseline_posisi_y = posisi_smooth
@@ -336,6 +393,7 @@ while True:
                             riwayat_prediksi = []
                             riwayat_kecepatan_max = []
                             riwayat_kecepatan = []
+                            fall_sudah_dikirim = False  # reset event jatuh nek kene
 
                 if sudut < 30:
                     riwayat_prediksi = []
@@ -360,7 +418,7 @@ while True:
     elif fall_state == "FALL_CONFIRMED":
         status = "JATUH TERDETEKSI!"
 
-    # ── Overlay lengkap seperti code awal ───────────────────
+    # gui
     warna = (0, 0, 255) if "JATUH" in status else (0, 255, 0)
 
     frame_annotated = hasil[0].plot()
@@ -391,6 +449,17 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
     cv2.imshow("SentinelAI - Hybrid Fall Detection", frame_annotated)
+
+    # 1x kirim fall event ke backend (jatuh terdeteksi)
+    if fall_state == "FALL_CONFIRMED" and not fall_sudah_dikirim:
+        kirim_fall_event_ke_backend(frame_terkini, confidence_score=prediksi_conf)
+        fall_sudah_dikirim = True
+
+    # status kamera dikirim ke backend / 5 detik sekali
+    if (sekarang - waktu_kirim_frame_terakhir) >= JEDA_KIRIM_FRAME:
+        if frame_terkini is not None:
+            kirim_status_frame_ke_backend(frame_terkini)
+        waktu_kirim_frame_terakhir = sekarang
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

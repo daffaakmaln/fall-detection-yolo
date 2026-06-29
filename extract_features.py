@@ -66,10 +66,10 @@ def proses_folder_gambar(folder_path, label, hasil_list):
                     if posisi_sebelumnya is not None:
                         kecepatan = (fitur["posisi_y"] - posisi_sebelumnya) / (1/30)
                     
-                    # ── FILTER: untuk label fall, hanya simpan frame yang relevan ──
+                    # filter untuk fall label: only save kecepatan > 200 or sudut > 50
                     simpan = True
                     if label == "fall":
-                        relevan = kecepatan > 200 or fitur["sudut"] > 50  # tanpa abs()
+                        relevan = kecepatan > 200 or fitur["sudut"] > 50  
                         simpan = relevan
                     
                     if simpan:
@@ -122,7 +122,6 @@ def proses_video(video_path, label, hasil_list):
                     if posisi_sebelumnya is not None:
                         kecepatan = (fitur["posisi_y"] - posisi_sebelumnya) / (1/fps)
                     
-                    # Dataset custom semuanya label "normal", tidak perlu filter
                     hasil_list.append({
                         "sudut": fitur["sudut"],
                         "kecepatan": kecepatan,
@@ -136,13 +135,10 @@ def proses_video(video_path, label, hasil_list):
     cap.release()
     print(f"  {video_path}: {frame_count} frame diproses")
 
-# ─────────────────────────────────────────────────────────
-# MAIN PROCESS
-# ─────────────────────────────────────────────────────────
-
+#main
 hasil_list = []
 
-# Proses dataset Fall (UR Fall - format gambar)
+#UR Fall - format gambar
 print("Memproses dataset FALL...")
 fall_path = "Fall"
 for folder in os.listdir(fall_path):
@@ -150,7 +146,7 @@ for folder in os.listdir(fall_path):
     if os.path.isdir(folder_path):
         proses_folder_gambar(folder_path, "fall", hasil_list)
 
-# Proses dataset Normal dari UR Fall (format gambar)
+#proses dataset Normal dari UR Fall (format gambar)
 print("\nMemproses dataset NORMAL (ADL)...")
 normal_path = "Normal"
 for folder in os.listdir(normal_path):
@@ -158,7 +154,7 @@ for folder in os.listdir(normal_path):
     if os.path.isdir(folder_path):
         proses_folder_gambar(folder_path, "normal", hasil_list)
 
-# Proses dataset custom (format video)
+#video custom (tiduran, duduk, dll)
 print("\nMemproses dataset CUSTOM (video tiduran dll)...")
 custom_path = "dataset_custom"
 for subfolder in os.listdir(custom_path):
@@ -169,7 +165,6 @@ for subfolder in os.listdir(custom_path):
                 video_path = os.path.join(subfolder_path, video_file)
                 proses_video(video_path, "normal", hasil_list)
 
-# Simpan ke CSV
 df = pd.DataFrame(hasil_list)
 df.to_csv("dataset_fitur.csv", index=False)
 
