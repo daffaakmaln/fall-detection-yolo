@@ -1,5 +1,10 @@
 ﻿# SentinelAI — Hybrid Fall Detection (Python)
 
+ See Our FullStack Repo here:
+- **Fall Detection AI**: [fall-detection-yolo](https://github.com/daffaakmaln/fall-detection-yolo) (Python)
+- **Backend**: [backend-sentinel](https://github.com/JonathanFaustinus/backend-sentinel) (Javascript)
+- **Frontend**: [sentinel_ai_app](https://github.com/daffaakmaln/sentinel_ai_app) (Flutter - Dart)
+
 A real-time fall detection system based on **YOLOv8 Pose Estimation** + **Random Forest Classifier**, integrated with a **Backend API** (Node.js), **Telegram Bot** for flexibility command, and **Flutter** for the Mobile Application
 
 ---
