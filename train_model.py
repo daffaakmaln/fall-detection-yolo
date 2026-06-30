@@ -16,13 +16,17 @@ X = df[["sudut", "kecepatan"]]
 y = df["label"]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+    X, y, test_size=0.15, random_state=7, stratify=y
 )
 
 print(f"\nTrain: {len(X_train)}, Test: {len(X_test)}")
 
 # train with randum furest
-model = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
+model = RandomForestClassifier(
+    n_estimators=100,
+    max_depth=10,
+    random_state=42
+)
 model.fit(X_train, y_train)
 
 # cross validation
