@@ -1,5 +1,15 @@
 ﻿# SentinelAI — Hybrid Fall Detection (Python)
 
+```
+╔════════════════════════════════════════════════════════════════╗
+║  ____  _____ _   _ _____ ___ _   _ _____ _          _    ___    ║
+║ / ___|| ____| \ | |_   _|_ _| \ | | ____| |        / \  |_ _|   ║
+║ \___ \|  _| |  \| | | |  | ||  \| |  _| | |       / _ \  | |    ║
+║  ___) | |___| |\  | | |  | || |\  | |___| |___   / ___ \ | |    ║
+║ |____/|_____|_| \_| |_| |___|_| \_|_____|_____| /_/   \_\___|   ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
  See Our FullStack Repo here:
 - **Fall Detection AI**: [fall-detection-yolo](https://github.com/daffaakmaln/fall-detection-yolo) (Python)
 - **Backend**: [backend-sentinel](https://github.com/JonathanFaustinus/backend-sentinel) (Javascript)
@@ -27,7 +37,7 @@ A real-time fall detection system based on **YOLOv8 Pose Estimation** + **Random
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 - **Real-time pose detection** using YOLOv8 (`yolov8s-pose.pt`)
 - **Hybrid classification**: combines body angle + fall speed, processed by a **Random Forest** model (`model_fall_detection.pkl`)
@@ -156,7 +166,7 @@ JEDA_NOTIFIKASI   = 30                        # delay between notifications (sec
 WAKTU_DIAM        = 1.5                       # (reserved, not yet actively used in the loop)
 ```
 
-> ⚠️ `kamera = cv2.VideoCapture(0)` is still hardcoded to device `0`, separate from the `CAMERA_ID` variable sent to the backend (which is only the logical camera ID in the database, not the device index).
+>  `kamera = cv2.VideoCapture(0)` is still hardcoded to device `0`, separate from the `CAMERA_ID` variable sent to the backend (which is only the logical camera ID in the database, not the device index).
 
 ---
 
@@ -178,7 +188,7 @@ TELEGRAM_CHAT_ID=your_telegram_chat_id
 
 ---
 
-## ▶️Running the Program
+## Running the Program
 
 ```bash
 python sentinel.py
@@ -287,6 +297,6 @@ The OpenCV window (`SentinelAI - Hybrid Fall Detection`) displays:
 
 ---
 
-## ⚠️ Important Note
+##  Important Note
 
 > **The core detection logic (pose extraction, feature engineering, state machine, and the RF model) must not be modified** without a thorough re-tuning and re-testing process, since all thresholds are interdependent.
