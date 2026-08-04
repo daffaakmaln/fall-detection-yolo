@@ -1,0 +1,9 @@
+/dataset
+/dataset_custom
+/Fall
+/Normal
+/fall-detection-yolo
+/old_model
+yolov8s-pose.pt
+.env
+dataset_custom.zip
