@@ -1,4 +1,4 @@
-﻿# SentinelAI — Hybrid Fall Detection (Python)
+# SentinelAI — Hybrid Fall Detection (Python)
 
 ```
 ╔════════════════════════════════════════════════════════════════╗
