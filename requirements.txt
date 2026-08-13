@@ -1,0 +1,7 @@
+PySide6
+opencv-python
+ultralytics
+numpy
+joblib
+requests
+python-dotenv
