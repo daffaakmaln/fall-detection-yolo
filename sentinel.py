@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-#main config
+# Main Config
 BACKEND_URL       = "http://localhost:3000"
 AI_API_KEY        = os.getenv("API_KEY")
 CAMERA_ID         = 2
@@ -22,7 +22,7 @@ TELEGRAM_CHAT_ID  = os.getenv("TELEGRAM_CHAT_ID")
 JEDA_NOTIFIKASI   = 30
 WAKTU_DIAM        = 1.5
 
-#config threshold  
+# Config Threshold  
 RF_FALL_CONF_THRESHOLD      = 0.60
 IMPACT_SPEED_THRESHOLD      = 95
 IMPACT_DELTA_ANGLE          = 10
