@@ -113,10 +113,14 @@ class DetectionWorker(QThread):
             try:
                 _, buffer = cv2.imencode(".jpg", frame)
                 files = {"frame": ("frame.jpg", buffer.tobytes(), "image/jpeg")}
-                requests.post(
+                resp = requests.post(
                     f"{BACKEND_URL}/api/cameras/{self.camera_id}/status-frame",
                     headers={"x-api-key": AI_API_KEY}, files=files, timeout=10
                 )
+                if resp.status_code == 200:
+                    self.backend_error.emit(f"Frame terkirim OK (camera_id={self.camera_id})")
+                else:
+                    self.backend_error.emit(f"Frame gagal: {resp.status_code} - {resp.text}")
             except Exception as e:
                 self.backend_error.emit(f"Error kirim frame: {e}")
         threading.Thread(target=_kirim, daemon=True).start()
